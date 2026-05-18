@@ -13,23 +13,32 @@ with open("manga_tags.csv", "w", newline="", encoding="utf-8") as csvfile:
     csvwriter = csv.writer(csvfile)
     csvwriter.writerow(["Manga Title", "Tag Name"])
     while offset < MAX_OFFSET:
-        response = requests.get(f"https://api.mangadex.org/manga?limit=100&offset={offset}")
-        if response.status_code != SUCCESS_STATUS:
-            try:
-                response.raise_for_status()
-            except requests.RequestException as e:
-                print(f"Error fetching data for offset {offset}: {e}")
-                retry_count += 1
-                if retry_count >= MAX_RETRIES:
-                    print("Max retry attempts reached. Exiting.")
-                    offset += 100
-                    retry_count = 0
-                time.sleep(2 ** retry_count)  # Wait before retrying
-                continue
+
+        response = requests.get(
+            "https://api.mangadex.org/manga",
+            params= {
+                "limit": 100,
+                "offset": offset
+            }
+        )
+
+        try:
+            response.raise_for_status()
+
+        except requests.RequestException as e:
+
+            print(f"Error fetching data for offset {offset}: {e}")
+            retry_count += 1
+
+            if retry_count >= MAX_RETRIES:
+                print("Max retry attempts reached. Exiting.")
+                offset += 100
+                retry_count = 0
+            time.sleep(2 ** retry_count)  # Wait before retrying
             continue
-
-
+            
         data = response.json()
+
         for manga in data["data"]:
             # Getting the English title of the manga, if possible
             manga_title = list(manga["attributes"]["title"].values())[0]
@@ -47,6 +56,6 @@ with open("manga_tags.csv", "w", newline="", encoding="utf-8") as csvfile:
 
         retry_count = 0
         offset += 100
-        time.sleep(0.3)
+        time.sleep(0.5)
 
 print("Data has been written to manga_tags.csv")
